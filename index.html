@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Haji Saeed Ullah - Barcode reader</title>
-
+    <title>Haji Saeed Ullah - Barcode Generator</title>
     <style>
-        /* --- CSS styles embedded directly --- */
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
@@ -41,10 +39,11 @@
             gap: 15px;
             margin-bottom: 25px;
             justify-content: center;
+            flex-wrap: wrap;
         }
 
         input[type="file"] {
-            display: none; /* Hide the default file input */
+            display: none;
         }
 
         .custom-file-upload {
@@ -97,14 +96,14 @@
         }
 
         .loading-spinner {
-            border: 4px solid #f3f3f3; /* Light grey */
-            border-top: 4px solid #3498db; /* Blue */
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
             border-radius: 50%;
             width: 30px;
             height: 30px;
             animation: spin 1s linear infinite;
             margin: 20px auto;
-            display: none; /* Hidden by default */
+            display: none;
         }
 
         @keyframes spin {
@@ -114,9 +113,8 @@
 
         .barcode-grid {
             display: grid;
-            /* Adjust this for your label sheet: e.g., if labels are 2.5 inches wide, 250px might be a good starting point */
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
             margin-top: 30px;
             border-top: 1px solid #eee;
             padding-top: 30px;
@@ -136,26 +134,27 @@
 
         .barcode-item h3 {
             margin-top: 0;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             color: #007bff;
-            font-size: 1.1em;
+            font-size: 1em;
         }
 
         .barcode-item p {
-            margin: 5px 0;
+            margin: 4px 0;
             text-align: left;
-            font-size: 0.9em;
+            font-size: 0.85em;
             word-wrap: break-word;
         }
+        
         .barcode-item p strong {
             color: #555;
         }
 
-        .barcode-item svg {
+        .barcode-item canvas { /* Target canvas instead of svg */
             max-width: 100%;
             height: auto;
             display: block;
-            margin: 10px auto 0;
+            margin: 8px auto 0;
         }
 
         .error-message {
@@ -168,44 +167,98 @@
             display: none;
         }
 
+        /* Responsive adjustments for smaller screens */
+        @media screen and (max-width: 600px) {
+            .container {
+                padding: 15px;
+                margin: 10px;
+            }
+            
+            .upload-section {
+                flex-direction: column;
+            }
+            
+            .barcode-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .barcode-item {
+                padding: 10px;
+            }
+        }
+
         /* Print specific styles */
         @media print {
-            body {
+            body, html {
                 margin: 0;
                 padding: 0;
-                background: none;
+                background: white;
+                width: 100%;
+                height: 100%;
                 box-shadow: none;
             }
+            
             .container {
                 box-shadow: none;
                 border: none;
                 padding: 0;
                 max-width: none;
                 width: 100%;
+                margin: 0;
             }
+            
             /* Hide UI elements not needed for print */
             .upload-section, .print-button, #generateBtn, h1, p:first-of-type, .error-message {
                 display: none !important;
             }
+            
+            /* A4 size adjustments with 2x2 grid */
+            @page {
+                size: A4;
+                margin: 0.5cm;
+            }
+            
             .barcode-grid {
-                display: block; /* Stack items for printing */
-                /* You might need to adjust column-count based on your label sheet layout */
-                column-count: 2; /* Example: 2 columns per page */
-                column-gap: 20px;
-                page-break-after: always; /* Force page break after the grid, if needed */
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5cm;
+                margin: 0;
+                padding: 0;
+                border: none;
+                width: 100%;
+                page-break-after: always;
             }
+            
             .barcode-item {
-                border: 1px dashed #ccc; /* Add a dashed border for easy cutting */
-                padding: 10px;
-                margin-bottom: 15px; /* Space between items */
-                break-inside: avoid; /* Prevent a single barcode item from breaking across columns/pages */
-                box-shadow: none;
+                border: 1px dotted #ccc;
+                padding: 0.3cm;
                 background-color: white;
+                box-shadow: none;
+                break-inside: avoid;
+                page-break-inside: avoid;
+                height: 5cm; /* Adjusted height for reasonable size */
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
             }
-            .barcode-item svg {
-                /* Adjust barcode size for printing if needed */
-                transform: scale(0.95);
-                transform-origin: center center;
+            
+            .barcode-item h3 {
+                font-size: 11pt;
+                margin: 0 0 0.1cm 0;
+            }
+            
+            .barcode-item p {
+                font-size: 9pt;
+                margin: 0.1cm 0;
+                line-height: 1.2;
+            }
+            
+            .barcode-item canvas { /* Target canvas for print styles */
+                margin: 0.1cm auto;
+                max-height: 2.5cm; /* Adjusted max-height to match new barcode height */
+                height: auto;
+                width: auto;
+                /* No need for fill/stroke on canvas as it's raster */
             }
         }
     </style>
@@ -241,7 +294,6 @@
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
     <script>
-        /* --- JavaScript logic embedded directly --- */
         document.addEventListener('DOMContentLoaded', () => {
             const excelFile = document.getElementById('excelFile');
             const fileNameSpan = document.getElementById('fileName');
@@ -251,20 +303,20 @@
             const loadingSpinner = document.getElementById('loading');
             const errorMessages = document.getElementById('errorMessages');
 
-            // Constants for Excel column names - **UPDATED TO MATCH YOUR IMAGE**
-            const ASSET_NUMBER_COL = "ASSETNUM";
-            const DESCRIPTION_COL = "Asset_Description";
-            const LOCATION_COL = "Asset_Location";
+            // Constants for Excel column names
+            const ASSET_NUMBER_COL = "Asset Number";
+            const DESCRIPTION_COL = "Description";
+            const LOCATION_COL = "Location";
 
             // Event listener for when a file is selected
             excelFile.addEventListener('change', (event) => {
                 const file = event.target.files[0];
                 if (file) {
                     fileNameSpan.textContent = file.name;
-                    generateBtn.style.display = 'block'; // Show generate button
-                    printBtn.style.display = 'none'; // Hide print button initially
-                    barcodeOutput.innerHTML = ''; // Clear any previous output
-                    errorMessages.style.display = 'none'; // Clear previous errors
+                    generateBtn.style.display = 'block';
+                    printBtn.style.display = 'none';
+                    barcodeOutput.innerHTML = '';
+                    errorMessages.style.display = 'none';
                     errorMessages.textContent = '';
                 } else {
                     fileNameSpan.textContent = 'No file chosen';
@@ -281,9 +333,9 @@
                     return;
                 }
 
-                loadingSpinner.style.display = 'block'; // Show loading spinner
-                barcodeOutput.innerHTML = ''; // Clear previous barcodes
-                printBtn.style.display = 'none'; // Hide print button during generation
+                loadingSpinner.style.display = 'block';
+                barcodeOutput.innerHTML = '';
+                printBtn.style.display = 'none';
                 errorMessages.style.display = 'none';
                 errorMessages.textContent = '';
 
@@ -296,7 +348,7 @@
 
                         const firstSheetName = workbook.SheetNames[0];
                         const worksheet = workbook.Sheets[firstSheetName];
-                        const json_data = XLSX.utils.sheet_to_json(worksheet); // Convert sheet to JSON array
+                        const json_data = XLSX.utils.sheet_to_json(worksheet);
 
                         if (json_data.length === 0) {
                             displayError("No data found in the Excel sheet.");
@@ -304,7 +356,7 @@
                         }
 
                         // Check for required columns in the first row of data
-                        const headers = Object.keys(json_data[0] || {}); // Get keys from first object, or empty if no data
+                        const headers = Object.keys(json_data[0] || {});
                         const missingCols = [];
                         if (!headers.includes(ASSET_NUMBER_COL)) missingCols.push(ASSET_NUMBER_COL);
                         if (!headers.includes(DESCRIPTION_COL)) missingCols.push(DESCRIPTION_COL);
@@ -321,7 +373,7 @@
                         console.error("Error reading or parsing Excel file:", error);
                         displayError(`Error processing file: ${error.message}. Make sure it's a valid .xlsx file.`);
                     } finally {
-                        loadingSpinner.style.display = 'none'; // Hide loading spinner
+                        loadingSpinner.style.display = 'none';
                     }
                 };
 
@@ -335,50 +387,55 @@
 
             // Function to generate and display barcodes
             function generateBarcodes(data) {
-                barcodeOutput.innerHTML = ''; // Clear previous content
+                barcodeOutput.innerHTML = '';
 
                 data.forEach((row, index) => {
-                    // Retrieve data, defaulting to 'N/A' if column is missing or empty
                     const assetNumber = row[ASSET_NUMBER_COL] ? String(row[ASSET_NUMBER_COL]).trim() : 'N/A';
                     const description = row[DESCRIPTION_COL] ? String(row[DESCRIPTION_COL]).trim() : 'N/A';
                     const location = row[LOCATION_COL] ? String(row[LOCATION_COL]).trim() : 'N/A';
 
-                    // Combined data for the barcode (Asset Number | Description | Location)
+                    // Truncate long text for better display
+                    const shortDescription = description.length > 25 ? description.substring(0, 22) + '...' : description;
+                    const shortLocation = location.length > 25 ? location.substring(0, 22) + '...' : location;
+
                     const barcodeContent = `${assetNumber}|${description}|${location}`;
 
                     const barcodeItem = document.createElement('div');
                     barcodeItem.className = 'barcode-item';
 
+                    // Use a canvas element for rendering the barcode
                     barcodeItem.innerHTML = `
                         <h3>Asset #: ${assetNumber}</h3>
-                        <p><strong>Description:</strong> ${description}</p>
-                        <p><strong>Location:</strong> ${location}</p>
-                        <svg id="barcode-${index}"></svg>
+                        <p><strong>Desc:</strong> ${shortDescription}</p>
+                        <p><strong>Loc:</strong> ${shortLocation}</p>
+                        <canvas id="barcode-${index}"></canvas>
                     `;
                     barcodeOutput.appendChild(barcodeItem);
 
                     try {
-                        // Generate barcode using JsBarcode library
+                        // Generate barcode onto the canvas element
                         JsBarcode(`#barcode-${index}`, barcodeContent, {
-                            format: "CODE128", // Using Code 128 for alphanumeric data
-                            displayValue: true, // Show the encoded text below the barcode
-                            height: 80,         // Height of the barcode bars
-                            width: 2,           // Width of a single bar module
-                            fontSize: 16,       // Font size for the human-readable text
-                            margin: 10,         // Margin around the barcode
-                            textMargin: 5       // Margin between barcode and text
+                            format: "CODE128",
+                            displayValue: true,
+                            height: 100, /* Adjusted height to a more standard value */
+                            width: 2,   /* Adjusted width to a more standard value */
+                            fontSize: 12,
+                            margin: 5,
+                            textMargin: 5,
+                            background: "white", /* Explicitly setting background to white */
+                            lineColor: "#000000", /* Explicitly setting line color to black */
+                            render: "canvas" // <--- CRITICAL CHANGE: Render to canvas
                         });
+
                     } catch (jsbError) {
                         console.error(`Error generating barcode for row ${index} (Asset # ${assetNumber}):`, jsbError);
-                        // Display a fallback message if barcode generation fails for a specific item
-                        const svgElement = document.getElementById(`barcode-${index}`);
-                        if (svgElement) {
-                            svgElement.outerHTML = `<p style="color:red;">Barcode generation failed for Asset #: ${assetNumber}</p>`;
+                        const canvasElement = document.getElementById(`barcode-${index}`);
+                        if (canvasElement) {
+                            canvasElement.outerHTML = `<p style="color:red; font-size: 10px;">Barcode generation failed</p>`;
                         }
                     }
                 });
 
-                // Show print button if any barcodes were generated
                 if (data.length > 0) {
                     printBtn.style.display = 'block';
                 }
@@ -386,7 +443,7 @@
 
             // Event listener for the "Print All Barcodes" button
             printBtn.addEventListener('click', () => {
-                window.print(); // Triggers the browser's print dialog
+                window.print();
             });
 
             // Utility function to display error messages
@@ -395,7 +452,7 @@
                 errorMessages.style.display = 'block';
                 loadingSpinner.style.display = 'none';
                 printBtn.style.display = 'none';
-                barcodeOutput.innerHTML = ''; // Clear any displayed barcodes
+                barcodeOutput.innerHTML = '';
             }
         });
     </script>
