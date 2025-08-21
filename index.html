@@ -139,7 +139,8 @@
             font-size: 1em;
         }
 
-        .barcode-item p {
+        /* Removed paragraphs for description and location */
+        /* .barcode-item p {
             margin: 4px 0;
             text-align: left;
             font-size: 0.85em;
@@ -148,7 +149,7 @@
         
         .barcode-item p strong {
             color: #555;
-        }
+        } */
 
         .barcode-item canvas { /* Target canvas instead of svg */
             max-width: 100%;
@@ -236,7 +237,7 @@
                 box-shadow: none;
                 break-inside: avoid;
                 page-break-inside: avoid;
-                height: 5cm; /* Adjusted height for reasonable size */
+                height: 5.5cm; /* Adjusted height slightly for taller barcode */
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
@@ -247,18 +248,18 @@
                 margin: 0 0 0.1cm 0;
             }
             
-            .barcode-item p {
+            /* Removed paragraphs for description and location in print styles too */
+            /* .barcode-item p {
                 font-size: 9pt;
                 margin: 0.1cm 0;
                 line-height: 1.2;
-            }
+            } */
             
             .barcode-item canvas { /* Target canvas for print styles */
                 margin: 0.1cm auto;
-                max-height: 2.5cm; /* Adjusted max-height to match new barcode height */
+                max-height: 3cm; /* Adjusted max-height to accommodate new barcode height */
                 height: auto;
                 width: auto;
-                /* No need for fill/stroke on canvas as it's raster */
             }
         }
     </style>
@@ -394,37 +395,34 @@
                     const description = row[DESCRIPTION_COL] ? String(row[DESCRIPTION_COL]).trim() : 'N/A';
                     const location = row[LOCATION_COL] ? String(row[LOCATION_COL]).trim() : 'N/A';
 
-                    // Truncate long text for better display
-                    const shortDescription = description.length > 25 ? description.substring(0, 22) + '...' : description;
-                    const shortLocation = location.length > 25 ? location.substring(0, 22) + '...' : location;
+                    // shortDescription and shortLocation are no longer used for display but are still good to have if we reintroduce them.
+                    // const shortDescription = description.length > 25 ? description.substring(0, 22) + '...' : description;
+                    // const shortLocation = location.length > 25 ? location.substring(0, 22) + '...' : location;
 
                     const barcodeContent = `${assetNumber}|${description}|${location}`;
 
                     const barcodeItem = document.createElement('div');
                     barcodeItem.className = 'barcode-item';
 
-                    // Use a canvas element for rendering the barcode
+                    // Modified innerHTML to only include Asset # and canvas for barcode
                     barcodeItem.innerHTML = `
                         <h3>Asset #: ${assetNumber}</h3>
-                        <p><strong>Desc:</strong> ${shortDescription}</p>
-                        <p><strong>Loc:</strong> ${shortLocation}</p>
                         <canvas id="barcode-${index}"></canvas>
                     `;
                     barcodeOutput.appendChild(barcodeItem);
 
                     try {
-                        // Generate barcode onto the canvas element
                         JsBarcode(`#barcode-${index}`, barcodeContent, {
                             format: "CODE128",
                             displayValue: true,
-                            height: 100, /* Adjusted height to a more standard value */
-                            width: 2,   /* Adjusted width to a more standard value */
+                            height: 120,    /* Increased height from 100 to 120 */
+                            width: 2,
                             fontSize: 12,
                             margin: 5,
                             textMargin: 5,
-                            background: "white", /* Explicitly setting background to white */
-                            lineColor: "#000000", /* Explicitly setting line color to black */
-                            render: "canvas" // <--- CRITICAL CHANGE: Render to canvas
+                            background: "white",
+                            lineColor: "#000000",
+                            render: "canvas" // Render to canvas
                         });
 
                     } catch (jsbError) {
