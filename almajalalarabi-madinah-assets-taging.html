@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Almajal Alarabi Madinah Haram Assets Taging</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+
+        p.description {
+            text-align: center;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            font-size: 16px;
+            font-weight: bold;
+            color: #444;
+        }
+
+        .upload-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        input[type="file"] { display: none; }
+
+        .custom-file-upload {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .custom-file-upload:hover { background-color: #0056b3; }
+        #fileName { font-style: italic; color: #555; }
+
+        button {
+            display: block;
+            width: fit-content;
+            margin: 15px auto;
+            padding: 12px 25px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #generateBtn { background-color: #28a745; color: white; }
+        #generateBtn:hover { background-color: #218838; }
+        .print-button { background-color: #6c757d; color: white; }
+        .print-button:hover { background-color: #5a6268; }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
+
+        .barcode-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .barcode-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .barcode-item h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #007bff;
+            font-size: 1em;
+        }
+
+        .qrcode {
+            margin: 0 auto;
+            width: 100px;
+            height: 100px;
+        }
+
+        .error-message {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            @page { size: A4; margin: 0.5cm; }
+            .barcode-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.5cm;
+            }
+            .barcode-item {
+                border: 1px dotted #ccc;
+                padding: 0.3cm;
+                background-color: white;
+                box-shadow: none;
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            .barcode-item h3 { font-size: 10pt; margin-bottom: 0.2cm; }
+            .qrcode { width: 80px; height: 80px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Madinah Haram O&M Projects Assets Taging Stickers</h1>
+        <p class="description">عقد "تنفيذ أعمال صيانة ونظافة وتشغيل وسقيا المسجد النبوي الشريف"</p>
+
+        <div class="upload-section no-print">
+            <label for="excelFile" class="custom-file-upload">
+                <input type="file" id="excelFile" accept=".xlsx">
+                Choose Excel File
+            </label>
+            <span id="fileName">No file chosen</span>
+        </div>
+
+        <button id="generateBtn" class="no-print" style="display: none;">Generate QR Codes</button>
+        <button id="printBtn" class="print-button no-print" style="display: none;">Print All Stickers</button>
+
+        <div id="loading" class="loading-spinner"></div>
+        <div id="barcodeOutput" class="barcode-grid"></div>
+        <div id="errorMessages" class="error-message"></div>
+    </div>
+
+    <!-- SheetJS -->
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <!-- QRCode.js -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const excelFile = document.getElementById('excelFile');
+        const fileNameSpan = document.getElementById('fileName');
+        const generateBtn = document.getElementById('generateBtn');
+        const printBtn = document.getElementById('printBtn');
+        const barcodeOutput = document.getElementById('barcodeOutput');
+        const loadingSpinner = document.getElementById('loading');
+        const errorMessages = document.getElementById('errorMessages');
+
+        const ASSET_NUMBER_COL = "Asset Number";
+        const DESCRIPTION_COL = "Description";
+        const LOCATION_COL = "Location";
+
+        excelFile.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                fileNameSpan.textContent = file.name;
+                generateBtn.style.display = 'block';
+                printBtn.style.display = 'none';
+                barcodeOutput.innerHTML = '';
+            } else {
+                fileNameSpan.textContent = 'No file chosen';
+                generateBtn.style.display = 'none';
+                printBtn.style.display = 'none';
+            }
+        });
+
+        generateBtn.addEventListener('click', () => {
+            const file = excelFile.files[0];
+            if (!file) {
+                displayError("Please select an Excel file first.");
+                return;
+            }
+            loadingSpinner.style.display = 'block';
+            barcodeOutput.innerHTML = '';
+            printBtn.style.display = 'none';
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheet];
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (json.length === 0) {
+                        displayError("No data found in Excel.");
+                        return;
+                    }
+
+                    generateQRCodes(json);
+                } catch (error) {
+                    displayError("Error processing file: " + error.message);
+                } finally {
+                    loadingSpinner.style.display = 'none';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function generateQRCodes(data) {
+            barcodeOutput.innerHTML = '';
+            data.forEach((row, index) => {
+                const assetNumber = row[ASSET_NUMBER_COL] ? String(row[ASSET_NUMBER_COL]).trim() : "N/A";
+                const description = row[DESCRIPTION_COL] ? String(row[DESCRIPTION_COL]).trim() : "N/A";
+                const location = row[LOCATION_COL] ? String(row[LOCATION_COL]).trim() : "N/A";
+
+                const qrContent = `${assetNumber}|${description}|${location}`;
+
+                const barcodeItem = document.createElement('div');
+                barcodeItem.className = 'barcode-item';
+                barcodeItem.innerHTML = `<h3>Asset #: ${assetNumber}</h3><div id="qrcode-${index}" class="qrcode"></div>`;
+                barcodeOutput.appendChild(barcodeItem);
+
+                new QRCode(document.getElementById(`qrcode-${index}`), {
+                    text: qrContent,
+                    width: 100,
+                    height: 100,
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            });
+            if (data.length > 0) printBtn.style.display = 'block';
+        }
+
+        printBtn.addEventListener('click', () => window.print());
+
+        function displayError(msg) {
+            errorMessages.textContent = msg;
+            errorMessages.style.display = 'block';
+            loadingSpinner.style.display = 'none';
+        }
+    });
+    </script>
+</body>
+</html>
