@@ -147,10 +147,27 @@
             .barcode-item h3 { font-size: 10pt; margin-bottom: 0.2cm; }
             .qrcode { width: 80px; height: 80px; }
         }
+         .image {
+      width: 100%;
+      height: 100vh; /* full screen */
+      display: flex;
+      justify-content: center; /* horizontal center */
+      align-items: center;     /* vertical center */
+    }
+    .image img {
+      width: 300px;
+      height: 200px;
+      object-fit: contain; /* keep aspect ratio inside 300x200 */
+    }
     </style>
 </head>
 <body>
     <div class="container">
+         <div class="image">
+    <!-- Example Barcode Image -->
+    <img src="https://barcode.tec-it.com/barcode.ashx?data=123456789012&code=Code128&dpi=96" alt="Barcode">
+  </div>
+
         <h1>Madinah Haram O&M Projects Assets Taging Stickers</h1>
         <p class="description">عقد "تنفيذ أعمال صيانة ونظافة وتشغيل وسقيا المسجد النبوي الشريف"</p>
 
